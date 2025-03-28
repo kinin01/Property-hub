@@ -24,6 +24,8 @@ from a_home.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
+    path('landlord/', include('a_landlord.urls')),
+    path('tenant/', include('a_tenant.urls')),
     path('', include('a_home.urls')),
     path('profile/', include('a_users.urls')),
     path('@<username>/', profile_view, name="profile"),
