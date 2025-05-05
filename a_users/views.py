@@ -1,113 +1,52 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
-from allauth.account.utils import send_email_confirmation
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout
-from django.contrib.auth.models import User
-from django.contrib.auth.views import redirect_to_login
-from django.contrib import messages
-from .forms import *
+# views.py
+from rest_framework import generics, status
+from rest_framework.response import Response
+from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, LoginSerializer
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
 
-def profile_view(request, username=None):
-    if username:
-        profile = get_object_or_404(User, username=username).profile
-    else:
-        try:
-            profile = request.user.profile
-        except:
-            return redirect_to_login(request.get_full_path())
-    return render(request, 'a_users/profile.html', {'profile':profile})
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+            "user": {
+                "username": user.username,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name
+            },
+            "message": "User registered successfully"
+        }, status=status.HTTP_201_CREATED)
 
-@login_required
-def profile_edit_view(request):
-    form = ProfileForm(instance=request.user.profile)  
+class LoginView(APIView):
+    permission_classes = [AllowAny]
     
-    if request.method == 'POST':
-        form = ProfileForm(request.POST, request.FILES, instance=request.user.profile)
-        if form.is_valid():
-            form.save()
-            return redirect('profile')
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
+            
+            # Add custom claims
+            refresh['username'] = user.username
+            
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name
+                }
+            }, status=status.HTTP_200_OK)
         
-    if request.path == reverse('profile-onboarding'):
-        onboarding = True
-    else:
-        onboarding = False
-      
-    return render(request, 'a_users/profile_edit.html', { 'form':form, 'onboarding':onboarding })
-
-
-@login_required
-def profile_settings_view(request):
-    return render(request, 'a_users/profile_settings.html')
-
-
-@login_required
-def profile_emailchange(request):
-    
-    if request.htmx:
-        form = EmailForm(instance=request.user)
-        return render(request, 'partials/email_form.html', {'form':form})
-    
-    if request.method == 'POST':
-        form = EmailForm(request.POST, instance=request.user)
-
-        if form.is_valid():
-            
-            # Check if the email already exists
-            email = form.cleaned_data['email']
-            if User.objects.filter(email=email).exclude(id=request.user.id).exists():
-                messages.warning(request, f'{email} is already in use.')
-                return redirect('profile-settings')
-            
-            form.save() 
-            
-            # Then Signal updates emailaddress and set verified to False
-            
-            # Then send confirmation email 
-            send_email_confirmation(request, request.user)
-            
-            return redirect('profile-settings')
-        else:
-            messages.warning(request, 'Email not valid or already in use')
-            return redirect('profile-settings')
-        
-    return redirect('profile-settings')
-
-
-@login_required
-def profile_usernamechange(request):
-    if request.htmx:
-        form = UsernameForm(instance=request.user)
-        return render(request, 'partials/username_form.html', {'form':form})
-    
-    if request.method == 'POST':
-        form = UsernameForm(request.POST, instance=request.user)
-        
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Username updated successfully.')
-            return redirect('profile-settings')
-        else:
-            messages.warning(request, 'Username not valid or already in use')
-            return redirect('profile-settings')
-    
-    return redirect('profile-settings')    
-
-
-@login_required
-def profile_emailverify(request):
-    send_email_confirmation(request, request.user)
-    return redirect('profile-settings')
-
-
-@login_required
-def profile_delete_view(request):
-    user = request.user
-    if request.method == "POST":
-        logout(request)
-        user.delete()
-        messages.success(request, 'Account deleted, what a pity')
-        return redirect('home')
-    
-    return render(request, 'a_users/profile_delete.html')
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
