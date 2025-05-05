@@ -43,6 +43,7 @@ ALLOWED_HOSTS = getenv('DJANGO_ALLOWED_HOSTS',
 # Application definition
 
 INSTALLED_APPS = [
+     'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -58,6 +59,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     # 'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+   
+    'drf_yasg',
 
     # My apps
     'a_users',
@@ -199,3 +202,12 @@ LOGIN_REDIRECT_URL = '/'
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # ACCOUNT_LOGIN_METHODS = {'email'}
 # ACCOUNT_EMAIL_REQUIRED = True
+JAZZMIN_SETTINGS = {
+    "site_title": "My Dashboard",
+    "site_header": "My Admin",
+    "site_brand": "My Admin Portal",
+    "welcome_sign": "Welcome to the Admin Portal",
+    "copyright": "My Company",
+    "show_sidebar": True,
+    "navigation_expanded": True,
+}
