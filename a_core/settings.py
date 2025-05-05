@@ -59,7 +59,9 @@ INSTALLED_APPS = [
 
     # My apps
     'a_users',
-    'home'
+    'home',
+    'landlord',
+    'tenant',
     
 ]
 
