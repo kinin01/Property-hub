@@ -34,8 +34,8 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-secret-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = getenv('DJANGO_ALLOWED_HOSTS',
-                       '127.0.0.1,localhost,*,https://property-hub-frontend-sigma.vercel.app').split(',')
+DJANGO_ALLOWED_HOSTS="127.0.0.1,localhost,https://property-hub-frontend-sigma.vercel.app,https://property-hub-backend-sigma.onrender.com"
+
 
 
 # Application definition
@@ -136,8 +136,13 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS',
-                                 'http://localhost:3000,http://localhost:5174').split(',')
+CORS_ALLOWED_ORIGINS = [
+'https://example.com',
+'http://localhost:3000',
+'https://property-hub-frontend-sigma.vercel.app'
+]
+
+
 
 CORS_ALLOW_CREDENTIALS = True
 
