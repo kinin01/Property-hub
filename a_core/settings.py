@@ -35,7 +35,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-secret-key')
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = getenv('DJANGO_ALLOWED_HOSTS',
-                       '127.0.0.1,localhost,*').split(',')
+                       '127.0.0.1,localhost,*,https://property-hub-frontend-sigma.vercel.app').split(',')
 
 
 # Application definition
