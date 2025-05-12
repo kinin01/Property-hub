@@ -7,11 +7,13 @@ from .views import (
 )
 
 urlpatterns = [
-    #path('register/', RegisterView.as_view(), name='register'),
+    #path('register/', RegisterView.as_view(), name='register'),gg
     #path('login/', LoginView.as_view(), name='login'),
-    path('user/', get_user),
     
-    path('properties/', PropertyListCreateView.as_view(), name='property-list-create'),
+    
+    #path('user/', get_user),
+    
+    #path('properties/', PropertyListCreateView.as_view(), name='property-list-create'),
     path('properties/<int:pk>/', PropertyRetrieveUpdateDestroyView.as_view(), name='property-detail'),
     
     path('units/', UnitListCreateView.as_view(), name='unit-list-create'),
