@@ -15,6 +15,7 @@ from utils.permissions import IsAdminOrPropertyManager
 def get_user(request):
     serializer = CustomUserSerializer(request.user)
     return Response(serializer.data)
+# checking if branch works
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
