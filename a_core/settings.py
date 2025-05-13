@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # ALLOWED_HOSTS = getenv('DJANGO_ALLOWED_HOSTS',
 #                        '127.0.0.1,localhost,https://property-hub-s28b.onrender.com,*').split(',')
@@ -31,7 +31,7 @@ ALLOWED_HOSTS = ['property-hub-s28b.onrender.com', 'localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
-     'jazzmin',
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-   
+
     'drf_yasg',
 
     # My apps
@@ -113,14 +113,20 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
-
-DATABASES = {
-
-    'default': dj_database_url.config(
-        default=os.getenv("DatabaseUrlRender"),
-    )
-    
-}
+if 'RENDER' in os.environ:
+    # Production settings for Render
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL')
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_USER_MODEL = 'a_users.CustomUser'
 
