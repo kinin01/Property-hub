@@ -24,8 +24,6 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-# ALLOWED_HOSTS = getenv('DJANGO_ALLOWED_HOSTS',
-#                        '127.0.0.1,localhost,https://property-hub-s28b.onrender.com,*').split(',')
 
 ALLOWED_HOSTS = ['property-hub-s28b.onrender.com', 'localhost', '127.0.0.1']
 
@@ -113,20 +111,20 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
-if 'RENDER' in os.environ:
+# if 'RENDER' in os.environ:
     # Production settings for Render
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL')
-        )
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.environ.get('DatabaseUrlRender')
+    )
+}
+# else:
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.sqlite3',
+#             'NAME': BASE_DIR / 'db.sqlite3',
+#         }
+#     }
 
 AUTH_USER_MODEL = 'a_users.CustomUser'
 
@@ -203,9 +201,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
 
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# ACCOUNT_LOGIN_METHODS = {'email'}
-# ACCOUNT_EMAIL_REQUIRED = True
 JAZZMIN_SETTINGS = {
     "site_title": "My Dashboard",
     "site_header": "My Admin",
