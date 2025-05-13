@@ -27,7 +27,7 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 # ALLOWED_HOSTS = getenv('DJANGO_ALLOWED_HOSTS',
 #                        '127.0.0.1,localhost,https://property-hub-s28b.onrender.com,*').split(',')
 
-ALLOWED_HOSTS = ['https://property-hub-s28b.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['property-hub-s28b.onrender.com', 'localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
