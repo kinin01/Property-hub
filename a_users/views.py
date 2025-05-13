@@ -13,8 +13,12 @@ from utils.permissions import IsAdminOrPropertyManager
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user(request):
-    serializer = CustomUserSerializer(request.user)
-    return Response(serializer.data)
+    data = {
+        "id": request.user.id,
+        "username": request.user.username,
+        "role": request.user.role,
+    }
+    return Response(data)
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
