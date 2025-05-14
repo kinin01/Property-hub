@@ -23,10 +23,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+# DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = 'RENDER' not in os.environ
 
 
-ALLOWED_HOSTS = ['property-hub-s28b.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['*','property-hub-backend.onrender.com', 'localhost',]
 
 AUTH_USER_MODEL = 'a_users.CustomUser'
 
@@ -124,7 +125,8 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv("DATABASE_URL", "sqlite:///db.sqlite3")
+        default=os.getenv("DATABASE_URL", "sqlite:///db.sqlite3"),
+        conn_max_age=600
     )
 }
 
@@ -199,10 +201,21 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+# This production code might break development mode, so we check whether we're in DEBUG mode
+if not DEBUG:
+    # Tell Django to copy static assets into a path called `staticfiles` (this is specific to Render)
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+    # Enable the WhiteNoise storage backend, which compresses static files to reduce disk use
+    # and renames the files with unique names for each version to support long-term caching
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# STATIC_URL = 'static/'
 STATICFILES_DIRS = [ BASE_DIR / 'static' ]
 # STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media' 
@@ -211,12 +224,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
 
-JAZZMIN_SETTINGS = {
-    "site_title": "My Dashboard",
-    "site_header": "My Admin",
-    "site_brand": "My Admin Portal",
-    "welcome_sign": "Welcome to the Admin Portal",
-    "copyright": "My Company",
-    "show_sidebar": True,
-    "navigation_expanded": True,
-}
+# JAZZMIN_SETTINGS = {
+#     "site_title": "My Dashboard",
+#     "site_header": "My Admin",
+#     "site_brand": "My Admin Portal",
+#     "welcome_sign": "Welcome to the Admin Portal",
+#     "copyright": "My Company",
+#     "show_sidebar": True,
+#     "navigation_expanded": True,
+# }
