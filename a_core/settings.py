@@ -115,7 +115,8 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
     # Production settings for Render
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DatabaseUrlRender')
+        default=os.environ.get('DatabaseUrlRender'),
+        conn_max_age=600
     )
 }
 # else:
