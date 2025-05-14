@@ -7,6 +7,7 @@ import dj_database_url
 from dotenv import load_dotenv 
 from datetime import timedelta
 
+
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -114,11 +115,18 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 # }
 # if 'RENDER' in os.environ:
     # Production settings for Render
+# DATABASES = {
+#     'default': dj_database_url.config(
+#          default=os.getenv("DatabaseUrlRender"),
+#     )
+# }
+
 DATABASES = {
     'default': dj_database_url.config(
-         default=os.getenv("DatabaseUrlRender"),
+        default=os.getenv("DATABASE_URL", "sqlite:///db.sqlite3")
     )
 }
+
 # else:
 #     DATABASES = {
 #         'default': {
