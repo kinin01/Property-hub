@@ -28,6 +28,7 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['property-hub-s28b.onrender.com', 'localhost', '127.0.0.1']
 
+AUTH_USER_MODEL = 'a_users.CustomUser'
 
 INSTALLED_APPS = [
     'jazzmin',
@@ -135,7 +136,7 @@ DATABASES = {
 #         }
 #     }
 
-AUTH_USER_MODEL = 'a_users.CustomUser'
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
