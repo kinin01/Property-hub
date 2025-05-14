@@ -27,7 +27,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key')
 DEBUG = 'RENDER' not in os.environ
 
 
-ALLOWED_HOSTS = ['*','property-hub-backend.onrender.com', 'localhost',]
+ALLOWED_HOSTS = ['*','https://property-hub-s28b.onrender.com', 'localhost',]
 
 AUTH_USER_MODEL = 'a_users.CustomUser'
 
@@ -161,7 +161,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
 'https://example.com',
 'http://localhost:3000',
-'https://property-hub-frontend-sigma.vercel.app'
+'https://property-hub-frontend-sigma.vercel.app',
+'https://property-hub-s28b.onrender.com',
 ]
 
 
