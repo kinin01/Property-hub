@@ -1,5 +1,6 @@
 from rest_framework import permissions
-from a_users.models import Property, Tenant, Unit
+from property.models import Unit
+from tenant.models import Tenant
 
 class IsAdminOrPropertyManager(permissions.BasePermission):
     def has_permission(self, request, view):

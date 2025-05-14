@@ -109,12 +109,12 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 # if 'RENDER' in os.environ:
     # Production settings for Render
 # DATABASES = {
@@ -123,12 +123,12 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 #     )
 # }
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv("DATABASE_URL", "sqlite:///db.sqlite3"),
-        conn_max_age=600
-    )
-}
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=os.getenv("DATABASE_URL", "sqlite:///db.sqlite3"),
+#         conn_max_age=600
+#     )
+# }
 
 # else:
 #     DATABASES = {
