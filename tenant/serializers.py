@@ -3,7 +3,8 @@ from rest_framework import serializers
 from django.db import IntegrityError
 from a_users.models import CustomUser
 from property.models import Unit
-from tenant.models import Tenant
+from tenant.models import Tenant, Visitor
+from django.utils.translation import gettext_lazy as _
 class TenantSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     unit = serializers.PrimaryKeyRelatedField(queryset=Unit.objects.all(), allow_null=True)
@@ -96,3 +97,21 @@ class TenantSerializer(serializers.ModelSerializer):
         else:
             representation['unit'] = None
         return representation
+    
+class VisitorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Visitor
+        fields = ['id', 'tenant', 'unit', 'visitor_name', 'email']
+        read_only_fields = ['id']
+
+    def validate(self, data):
+        # Validate that the tenant is associated with the unit
+        if data.get('tenant') and data.get('unit'):
+            if data['tenant'].unit != data['unit']:
+                raise serializers.ValidationError("The selected tenant is not associated with this unit.")
+        return data
+
+    def create(self, validated_data):
+        # Create visitor without checking for duplicate names
+        visitor = Visitor.objects.create(**validated_data)
+        return visitor

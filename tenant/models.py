@@ -20,3 +20,28 @@ class Tenant(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.unit.unit_number if self.unit else 'No Unit'}"
+
+class Visitor(models.Model):
+    tenant = models.ForeignKey(
+        Tenant,
+        on_delete=models.SET_NULL,
+        related_name='visitors',
+        null=True,
+        blank=True,
+        verbose_name=_('tenant')
+    )
+    unit = models.ForeignKey(
+        Unit,
+        on_delete=models.CASCADE,
+        related_name='visitors',
+        verbose_name=_('unit')
+    )
+    visitor_name = models.CharField(_('visitor name'), max_length=255)
+    email = models.EmailField(_('email address'), blank=True, null=True)
+
+    class Meta:
+        verbose_name = _('visitor')
+        verbose_name_plural = _('visitors')
+
+    def __str__(self):
+        return f"{self.visitor_name} (ID: {self.id})"
