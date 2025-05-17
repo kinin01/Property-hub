@@ -3,9 +3,13 @@ from rest_framework import serializers
 from django.db import IntegrityError
 from a_users.models import CustomUser
 from property.models import Unit
-from tenant.models import Tenant, Visitor
+from tenant.models import Payment, Tenant, Visitor
 from django.utils.translation import gettext_lazy as _
+from .models import Payment, Tenant, Unit
+import re
+
 class TenantSerializer(serializers.ModelSerializer):
+    # email = serializers.EmailField(source='user.email')
     user = serializers.SerializerMethodField()
     unit = serializers.PrimaryKeyRelatedField(queryset=Unit.objects.all(), allow_null=True)
 
@@ -97,6 +101,7 @@ class TenantSerializer(serializers.ModelSerializer):
         else:
             representation['unit'] = None
         return representation
+  
     
 class VisitorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -115,3 +120,71 @@ class VisitorSerializer(serializers.ModelSerializer):
         # Create visitor without checking for duplicate names
         visitor = Visitor.objects.create(**validated_data)
         return visitor
+    
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    tenant = serializers.PrimaryKeyRelatedField(queryset=Tenant.objects.all())
+    unit = serializers.PrimaryKeyRelatedField(queryset=Unit.objects.all())
+
+    class Meta:
+        model = Payment
+        fields = [
+            'id', 'tenant', 'unit', 'amount_due', 'amount_paid', 'payment_method',
+            'payment_status', 'transaction_id', 'billing_period', 'payment_date',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at', 'payment_date']
+
+    def validate_tenant(self, value):
+        if not Tenant.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError(_('Invalid tenant ID'))
+        return value
+
+    def validate_unit(self, value):
+        if not Unit.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError(_('Invalid unit ID'))
+        return value
+
+    def validate_billing_period(self, value):
+        if not re.match(r'^\d{4}-\d{2}$', value):
+            raise serializers.ValidationError(_('Billing period must be in YYYY-MM format'))
+        try:
+            year, month = map(int, value.split('-'))
+            if not (1 <= month <= 12):
+                raise serializers.ValidationError(_('Invalid month in billing period'))
+        except ValueError:
+            raise serializers.ValidationError(_('Billing period must be in YYYY-MM format'))
+        return value
+
+    def validate_payment_method(self, value):
+        if value not in dict(Payment.PAYMENT_METHODS).keys():
+            raise serializers.ValidationError(_('Invalid payment method'))
+        return value
+
+    def validate_payment_status(self, value):
+        if value not in dict(Payment.PAYMENT_STATUSES).keys():
+            raise serializers.ValidationError(_('Invalid payment status'))
+        return value
+
+    def validate_amount_due(self, value):
+        if value < 0:
+            raise serializers.ValidationError(_('Amount due cannot be negative'))
+        return value
+
+    def validate_amount_paid(self, value):
+        if value < 0:
+            raise serializers.ValidationError(_('Amount paid cannot be negative'))
+        return value
+
+    def validate(self, data):
+        unit = data.get('unit')
+        amount_due = data.get('amount_due')
+        if unit and amount_due is not None:
+            if amount_due != unit.monthly_rent:
+                raise serializers.ValidationError(
+                    _('Amount due must match the unit\'s monthly rent: {}').format(unit.monthly_rent)
+                )
+        return data
+    
+    

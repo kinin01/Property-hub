@@ -2,10 +2,22 @@ from django.shortcuts import render
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Tenant, Visitor
+
+from a_users import serializers
+from .models import Payment, Tenant, Visitor
 from django.utils.translation import gettext_lazy as _
-from .serializers import TenantSerializer, VisitorSerializer
+from .serializers import PaymentSerializer, TenantSerializer, VisitorSerializer
 from utils.permissions import IsAdminOrPropertyManager
+
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.utils.translation import gettext_lazy as _
+from .models import Payment, Tenant
+from .serializers import PaymentSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 # Create your views here.
 
 class TenantListCreateView(generics.ListCreateAPIView):
@@ -72,3 +84,75 @@ class VisitorRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.delete()
+
+class PaymentListCreateView(generics.ListCreateAPIView):
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'admin':
+            return Payment.objects.all()
+        return Payment.objects.filter(
+            unit__property__owner=user
+        ) | Payment.objects.filter(
+            unit__property__manager=user
+        )
+
+    def post(self, request, *args, **kwargs):
+        logger.info(f"Payment request data: {request.data}, User: {request.user.email}, Role: {request.user.role}")
+        user = self.request.user
+        if user.role == 'tenant':
+            if not hasattr(user, 'tenant_profile'):
+                logger.error(f"Tenant user {user.email} has no tenant profile")
+                raise serializers.ValidationError(_('User does not have a tenant profile'))
+            if request.data.get('tenant') != user.tenant_profile.id:
+                logger.error(f"Tenant {user.email} attempted to create payment for another tenant")
+                raise serializers.ValidationError(_('Tenants can only create payments for themselves'))
+        return super().post(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        logger.info(f"Validated payment data: {serializer.validated_data}")
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error saving payment: {str(e)}")
+            raise serializers.ValidationError(_('Failed to create payment: {}').format(str(e)))
+
+class PaymentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Restrict access to payments based on user role.
+        - Tenants: Only their own payments.
+        - Admins/Property Managers: Payments for their properties.
+        """
+        user = self.request.user
+        if user.role == 'tenant':
+            return Payment.objects.filter(tenant__user=user)
+        elif user.role in ['admin', 'property_manager']:
+            return Payment.objects.filter(
+                unit__property__owner=user
+            ) | Payment.objects.filter(
+                unit__property__manager=user
+            )
+        return Payment.objects.none()
+
+    def perform_update(self, serializer):
+        """
+        Ensure tenants can only update their own payments.
+        Validate amount_due against unit's monthly_rent.
+        """
+        user = self.request.user
+        instance = self.get_object()
+        if user.role == 'tenant' and instance.tenant.user != user:
+            raise serializers.ValidationError(_('Tenants can only update their own payments'))
+        unit = serializer.validated_data.get('unit', instance.unit)
+        amount_due = serializer.validated_data.get('amount_due', instance.amount_due)
+        if amount_due != unit.monthly_rent:
+            raise serializers.ValidationError(
+                _('Amount due must match the unit\'s monthly rent: {}').format(unit.monthly_rent)
+            )
+        serializer.save()

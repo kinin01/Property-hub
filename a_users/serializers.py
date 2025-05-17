@@ -2,6 +2,10 @@ from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
+
+from property.serializers import UnitSerializer
+from tenant.models import Payment
+from tenant.serializers import TenantSerializer
 from .models import CustomUser
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -84,3 +88,31 @@ class RegisterSerializer(serializers.ModelSerializer):
             role=validated_data.get('role', 'tenant')
         )
         return user
+
+
+class DashboardStatsSerializer(serializers.Serializer):
+    total_properties = serializers.IntegerField()
+    total_units = serializers.IntegerField()
+    occupied_units = serializers.IntegerField()
+    non_occupied_units = serializers.IntegerField()
+    occupancy_percentage = serializers.FloatField()
+    total_payments = serializers.IntegerField()
+    total_amount_due = serializers.FloatField()
+    total_amount_paid = serializers.FloatField()
+    total_balance = serializers.FloatField()
+    collection_percentage = serializers.FloatField()
+    
+class PaymentSerializer(serializers.ModelSerializer):
+    tenant = TenantSerializer()
+    unit = UnitSerializer()
+
+    class Meta:
+        model = Payment
+        fields = ['id', 'tenant', 'unit', 'amount_due', 'amount_paid', 'billing_period']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Ensure amount_due and amount_paid are floats for JSON compatibility
+        representation['amount_due'] = float(instance.amount_due) if instance.amount_due is not None else 0.0
+        representation['amount_paid'] = float(instance.amount_paid) if instance.amount_paid is not None else 0.0
+        return representation

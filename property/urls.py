@@ -10,4 +10,6 @@ urlpatterns = [
     
     path('units/', UnitListCreateView.as_view(), name='unit-list-create'),
     path('units/<int:pk>/', UnitRetrieveUpdateDestroyView.as_view(), name='unit-detail'),
+    
+   
 ]
