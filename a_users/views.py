@@ -80,6 +80,7 @@ class TenantListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsAdminOrPropertyManager]
 
     def create(self, request, *args, **kwargs):
+        
         print("Create tenant request data:", request.data)
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
