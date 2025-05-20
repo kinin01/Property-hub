@@ -146,8 +146,6 @@ class DashboardStatsView(generics.GenericAPIView):
         try:
             user = self.request.user
             logger.debug(f"Fetching dashboard stats for user {user.email}")
-
-            # Initialize querysets based on user role
             if user.role == 'admin':
                 properties = Property.objects.filter(is_active=True)
                 units = Unit.objects.all()
@@ -191,8 +189,6 @@ class DashboardStatsView(generics.GenericAPIView):
                 (total_amount_paid / total_amount_due * 100) if total_amount_due > 0 else 0.0
             )
             logger.debug(f"Payment metrics: due={total_amount_due}, paid={total_amount_paid}, balance={total_balance}")
-
-            # Structure response data
             stats = {
                 'total_properties': total_properties,
                 'total_units': total_units,
@@ -206,7 +202,6 @@ class DashboardStatsView(generics.GenericAPIView):
                 'collection_percentage': round(collection_percentage, 1),
             }
 
-            # Serialize the response
             serializer = self.get_serializer(stats)
             logger.info(f"Dashboard stats retrieved for user {user.email}: {stats}")
             return Response(serializer.data, status=status.HTTP_200_OK)
