@@ -68,5 +68,4 @@ class Unit(models.Model):
 
     def __str__(self):
         return f"{self.unit_number} ({self.get_unit_type_display()}) - {self.property.name}"
-
     
