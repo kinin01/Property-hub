@@ -7,6 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .serializers import PropertySerializer, UnitSerializer
 from .models import Property, Unit
+
 class PropertyListCreateView(generics.ListCreateAPIView):
     queryset = Property.objects.all()
     serializer_class = PropertySerializer
