@@ -9,12 +9,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.utils.translation import gettext_lazy as _
 
 from .serializers import PropertySerializer, UnitSerializer
-<<<<<<< HEAD
-from .models import  Property, Unit
-=======
+
 from .models import Property, Unit
 
->>>>>>> 15c3a87c7af935e26c4e052c30e638583f37b5f0
 class PropertyListCreateView(generics.ListCreateAPIView):
     queryset = Property.objects.all()
     serializer_class = PropertySerializer
