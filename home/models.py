@@ -7,3 +7,6 @@ class Notification(models.Model):
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     recipients = models.ManyToManyField(CustomUser, related_name='notifications')
+
+    def __str__(self):
+        return f"Notification: {self.message[:50]}"

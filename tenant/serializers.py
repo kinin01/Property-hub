@@ -11,6 +11,7 @@ import re
 class TenantSerializer(serializers.ModelSerializer):
     # email = serializers.EmailField(source='user.email')
     user = serializers.SerializerMethodField()
+    # user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), allow_null=True)
     unit = serializers.PrimaryKeyRelatedField(queryset=Unit.objects.all(), allow_null=True)
 
     class Meta:
