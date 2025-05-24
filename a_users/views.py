@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from property.serializers import UnitSerializer
 from utils.permissions import IsAdminOrPropertyManager
-from .serializers import DashboardStatsSerializer, PaymentSerializer
+from .serializers import PaymentSerializer
 import logging
 import decimal
 
@@ -22,7 +22,7 @@ from a_users import models
 from property.models import Property, Unit
 from tenant.models import Payment
 
-from .serializers import CustomUserSerializer, DashboardStatsSerializer, RegisterSerializer, LoginSerializer
+from .serializers import CustomUserSerializer,  RegisterSerializer, LoginSerializer
 from utils.permissions import IsAdminOrPropertyManager
 
 @api_view(['GET'])
@@ -136,78 +136,3 @@ class LoginView(APIView):
                 'user': CustomUserSerializer(user).data
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class DashboardStatsView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated, IsAdminOrPropertyManager]
-    serializer_class = DashboardStatsSerializer
-
-    def get(self, request, *args, **kwargs):
-        try:
-            user = self.request.user
-            logger.debug(f"Fetching dashboard stats for user {user.email}")
-            if user.role == 'admin':
-                properties = Property.objects.filter(is_active=True)
-                units = Unit.objects.all()
-                payments = Payment.objects.all()
-            else:
-                # Filter by properties owned or managed by the user
-                properties = Property.objects.filter(is_active=True).filter(
-                    models.Q(owner=user) | models.Q(manager=user)
-                )
-                units = Unit.objects.filter(
-                    models.Q(property__owner=user) | models.Q(property__manager=user)
-                )
-                payments = Payment.objects.filter(
-                    models.Q(unit__property__owner=user) | models.Q(unit__property__manager=user)
-                )
-
-            # Property metrics
-            total_properties = properties.count()
-            logger.debug(f"Total properties: {total_properties}")
-
-            # Unit metrics
-            total_units = units.count()
-            occupied_units = units.filter(is_occupied=True).count()
-            non_occupied_units = total_units - occupied_units
-            occupancy_percentage = (
-                (occupied_units / total_units * 100) if total_units > 0 else 0.0
-            )
-            logger.debug(f"Unit metrics: total={total_units}, occupied={occupied_units}, non_occupied={non_occupied_units}")
-
-            # Payment metrics with type casting
-            payment_aggregates = payments.aggregate(
-                total_due=Sum('amount_due'),
-                total_paid=Sum('amount_paid'),
-                total_payments=Count('id')
-            )
-            total_amount_due = decimal.Decimal(str(payment_aggregates['total_due'] or 0))
-            total_amount_paid = decimal.Decimal(str(payment_aggregates['total_paid'] or 0))
-            total_payments = payment_aggregates['total_payments'] or 0
-            total_balance = total_amount_due - total_amount_paid
-            collection_percentage = (
-                (total_amount_paid / total_amount_due * 100) if total_amount_due > 0 else 0.0
-            )
-            logger.debug(f"Payment metrics: due={total_amount_due}, paid={total_amount_paid}, balance={total_balance}")
-            stats = {
-                'total_properties': total_properties,
-                'total_units': total_units,
-                'occupied_units': occupied_units,
-                'non_occupied_units': non_occupied_units,
-                'occupancy_percentage': round(occupancy_percentage, 1),
-                'total_payments': total_payments,
-                'total_amount_due': float(total_amount_due),
-                'total_amount_paid': float(total_amount_paid),
-                'total_balance': float(total_balance),
-                'collection_percentage': round(collection_percentage, 1),
-            }
-
-            serializer = self.get_serializer(stats)
-            logger.info(f"Dashboard stats retrieved for user {user.email}: {stats}")
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            logger.error(f"Error retrieving dashboard stats for user {user.email}: {str(e)}")
-            return Response(
-                {'detail': 'Failed to retrieve dashboard statistics'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
