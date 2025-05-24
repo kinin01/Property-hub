@@ -8,13 +8,14 @@ from tenant.models import Payment
 from tenant.serializers import TenantSerializer
 from .models import CustomUser
 
+from django.contrib.auth import get_user_model
+
+
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone_number']
         
-        
-
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
@@ -35,16 +36,16 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Identifier and password are required.")
 
         user = None
-        from django.contrib.auth import get_user_model
-        UserModel = get_user_model()
 
         # Try to find user by email, username, or phone number
+        UserModel = get_user_model()
+        
         if '@' in identifier:
             try:
                 user = UserModel.objects.get(email=identifier)
             except UserModel.DoesNotExist:
                 pass
-        elif identifier.isdigit() and len(identifier) == 10:  # Assuming 10-digit phone number
+        elif identifier.isdigit() and len(identifier) == 10: 
             try:
                 user = UserModel.objects.get(phone_number=identifier)
             except UserModel.DoesNotExist:
@@ -105,14 +106,12 @@ class DashboardStatsSerializer(serializers.Serializer):
 class PaymentSerializer(serializers.ModelSerializer):
     tenant = TenantSerializer()
     unit = UnitSerializer()
-
     class Meta:
         model = Payment
         fields = ['id', 'tenant', 'unit', 'amount_due', 'amount_paid', 'billing_period']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        # Ensure amount_due and amount_paid are floats for JSON compatibility
         representation['amount_due'] = float(instance.amount_due) if instance.amount_due is not None else 0.0
         representation['amount_paid'] = float(instance.amount_paid) if instance.amount_paid is not None else 0.0
         return representation

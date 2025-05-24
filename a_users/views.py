@@ -33,7 +33,7 @@ def get_user(request):
         "username": request.user.username,
         "role": request.user.role,
     }
-    return Response(data)
+    return Response(data, status=200)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -50,7 +50,6 @@ def get_payments(request):
                 models.Q(unit__property__owner=user) | models.Q(unit__property__manager=user)
             )
 
-        # Serialize payments
         serializer = PaymentSerializer(payments, many=True)
         logger.info(f"Retrieved {len(serializer.data)} payments for user {user.email}")
         return Response(serializer.data, status=status.HTTP_200_OK)
