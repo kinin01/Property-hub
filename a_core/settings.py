@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'landlord',
     'tenant',
     'property',
+    'dashboard_stats',
     
 ]
 

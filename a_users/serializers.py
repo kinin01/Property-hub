@@ -91,17 +91,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-class DashboardStatsSerializer(serializers.Serializer):
-    total_properties = serializers.IntegerField()
-    total_units = serializers.IntegerField()
-    occupied_units = serializers.IntegerField()
-    non_occupied_units = serializers.IntegerField()
-    occupancy_percentage = serializers.FloatField()
-    total_payments = serializers.IntegerField()
-    total_amount_due = serializers.FloatField()
-    total_amount_paid = serializers.FloatField()
-    total_balance = serializers.FloatField()
-    collection_percentage = serializers.FloatField()
     
 class PaymentSerializer(serializers.ModelSerializer):
     tenant = TenantSerializer()
