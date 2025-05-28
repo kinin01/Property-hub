@@ -8,6 +8,12 @@ from django.utils.translation import gettext_lazy as _
 from .models import Payment, Tenant, Unit
 import re
 
+from rest_framework import serializers
+from .models import Visitor
+from django.contrib.auth import get_user_model
+
+CustomUser = get_user_model()
+
 class TenantSerializer(serializers.ModelSerializer):
     # email = serializers.EmailField(source='user.email')
     user = serializers.SerializerMethodField()
@@ -102,27 +108,38 @@ class TenantSerializer(serializers.ModelSerializer):
         else:
             representation['unit'] = None
         return representation
-  
-    
+
+
 class VisitorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visitor
+        tenant_name = serializers.PrimaryKeyRelatedField(queryset=Tenant.objects.all(), allow_null=True)
         fields = ['id', 'tenant', 'unit', 'visitor_name', 'email']
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'tenant', 'tenant_name']
 
     def validate(self, data):
-        # Validate that the tenant is associated with the unit
+        request = self.context.get('request')
+        user = request.user if request else None
+
+        # Validate tenant-unit association for non-null unit
         if data.get('tenant') and data.get('unit'):
             if data['tenant'].unit != data['unit']:
                 raise serializers.ValidationError("The selected tenant is not associated with this unit.")
+
+        # Tenant-specific validation
+        if user and user.role == 'tenant':
+            # Allow unit to be null or match user's unit
+            if data.get('unit') and (hasattr(user, 'unit') and user.unit and data.get('unit') != user.unit):
+                raise serializers.ValidationError("You can only book visitors for your own unit.")
+            # Tenants can only set themselves as the tenant
+            if data.get('tenant') and data['tenant'] != user:
+                raise serializers.ValidationError("You can only book visitors as yourself.")
+
         return data
 
     def create(self, validated_data):
-        # Create visitor without checking for duplicate names
         visitor = Visitor.objects.create(**validated_data)
         return visitor
-    
-
 
 class PaymentSerializer(serializers.ModelSerializer):
     tenant = serializers.PrimaryKeyRelatedField(queryset=Tenant.objects.all())

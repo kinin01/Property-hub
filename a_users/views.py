@@ -28,12 +28,13 @@ from utils.permissions import IsAdminOrPropertyManager
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user(request):
-    data = {
-        "id": request.user.id,
-        "username": request.user.username,
-        "role": request.user.role,
-    }
-    return Response(data, status=200)
+    # Optimize the query to avoid N+1 problem
+    user = models.CustomUser.objects.select_related().prefetch_related(
+        'tenant_profile__unit__property'
+    ).get(id=request.user.id)
+    
+    serializer = CustomUserSerializer(user)
+    return Response(serializer.data, status=200)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

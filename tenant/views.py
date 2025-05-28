@@ -16,9 +16,12 @@ from django.utils.translation import gettext_lazy as _
 from .models import Payment, Tenant
 from .serializers import PaymentSerializer
 import logging
+from rest_framework import permissions
+from rest_framework.decorators import api_view, permission_classes
 
 logger = logging.getLogger(__name__)
 # Create your views here.
+
 
 class TenantListCreateView(generics.ListCreateAPIView):
     queryset = Tenant.objects.all()
@@ -34,8 +37,12 @@ class TenantListCreateView(generics.ListCreateAPIView):
         print("Create tenant serializer errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
     def perform_create(self, serializer):
         serializer.save()
+
+    
+
 
 class TenantRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Tenant.objects.all()
@@ -53,19 +60,44 @@ class TenantRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
             instance.unit.is_occupied = False
             instance.unit.save()
         instance.delete()
-
-class VisitorListCreateView(generics.ListCreateAPIView):
-    queryset = Visitor.objects.all()
+class TenantVisitorListCreateView(generics.ListCreateAPIView):
     serializer_class = VisitorSerializer
     permission_classes = [IsAuthenticated, IsAdminOrPropertyManager]
+    def get_queryset(self):
+        user = self.request.user
+        # Admins and property managers see all visitors
+        if user.role in ['admin', 'property_manager']:
+            return Visitor.objects.all()
+        # Tenants only see their own visitors
+        if user.role == 'tenant':
+            if not hasattr(user, 'unit') or not user.unit:
+                return Visitor.objects.none()  # Return empty queryset if no unit
+            return Visitor.objects.filter(tenant=user)
+        return Visitor.objects.none()  # Default to empty for other roles
 
+        # Visitors = Visitor.objects.all() 
+        # serializer = self.get_serializer(Visitors, many=True)
+        # return serializer.data
+       
+        # Allow all visitors for now, can be filtered later
     def create(self, request, *args, **kwargs):
-        print("Create visitor request data:", request.data)
-        serializer = self.get_serializer(data=request.data)
+        print("Tenant visitor request data:", request.data)
+        # Automatically set tenant to the authenticated user for tenants
+        data = request.data.copy()
+        if request.user.role == 'tenant':
+            data['tenant'] = request.user.id
+            # if not hasattr(request.user, 'unit') or not request.user.unit:
+            #     return Response(
+            #         {"error": "Tenant has no associated unit."},
+            #         status=status.HTTP_400_BAD_REQUEST
+            #     )
+            # data['unit'] = request.user.unit.id  # Set unit to tenant's unit
+
+        serializer = self.get_serializer(data=data, context={'request': request})
         if serializer.is_valid():
             self.perform_create(serializer)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print("Create visitor serializer errors:", serializer.errors)
+        print("Tenant visitor serializer errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_create(self, serializer):
@@ -78,6 +110,13 @@ class VisitorRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         print("Update visitor request data:", request.data)
+        # Prevent tenants from modifying the tenant field
+        if request.user.role == 'tenant':
+            if 'tenant' in request.data and request.data['tenant'] != request.user.id:
+                return Response(
+                    {"error": "You cannot modify the tenant field."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
         response = super().update(request, *args, **kwargs)
         print("Update visitor response:", response.data)
         return response

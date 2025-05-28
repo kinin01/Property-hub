@@ -5,7 +5,6 @@ from a_users.serializers import CustomUserSerializer
 
 from rest_framework import serializers
 from .models import Notification
-from a_users.serializers import CustomUserSerializer
 from a_users.models import CustomUser
 
 
