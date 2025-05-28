@@ -4,7 +4,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 
 from property.serializers import UnitSerializer
-from tenant.models import Payment
+from tenant.models import Payment, Tenant
 from tenant.serializers import TenantSerializer
 from .models import CustomUser
 
@@ -12,10 +12,39 @@ from django.contrib.auth import get_user_model
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    unit = serializers.SerializerMethodField()
+    
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone_number']
-        
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone_number', 'unit']
+    
+    def get_unit(self, obj):
+        """Get unit data through tenant relationship with optimized query"""
+        if obj.role == 'tenant':
+            try:
+                tenant = Tenant.objects.select_related('unit__property').get(user=obj)
+                if tenant.unit:
+                    return {
+                        'id': tenant.unit.id,
+                        'unit_number': tenant.unit.unit_number,
+                        'property': {
+                            'id': tenant.unit.property.id,
+                            'name': tenant.unit.property.name
+                        } if tenant.unit.property else None
+                    }
+            except Tenant.DoesNotExist:
+                pass
+        return None
+    @property
+    def tenant_unit(self):
+        """Get the unit for tenant users"""
+        if self.role == 'tenant':
+            try:
+                tenant_profile = Tenant.objects.select_related('unit').get(user=self)
+                return tenant_profile.unit
+            except Tenant.DoesNotExist:
+                return None
+        return None
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):

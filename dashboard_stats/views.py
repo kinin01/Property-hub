@@ -19,7 +19,6 @@ from django.db.models import Sum, Count
 
 
 
-  
 class DashboardStatsView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated, IsAdminOrPropertyManager]
     serializer_class = DashboardStatsSerializer
@@ -35,7 +34,7 @@ class DashboardStatsView(generics.GenericAPIView):
             else:
                 # Filter by properties owned or managed by the user
                 properties = Property.objects.filter(is_active=True).filter(
-                    models.Q(owner=user) | models.Q(manager=user)
+                    models.Q(owner=user) | models.Q(property__manager=user)
                 )
                 units = Unit.objects.filter(
                     models.Q(property__owner=user) | models.Q(property__manager=user)
@@ -71,6 +70,50 @@ class DashboardStatsView(generics.GenericAPIView):
                 (total_amount_paid / total_amount_due * 100) if total_amount_due > 0 else 0.0
             )
             logger.debug(f"Payment metrics: due={total_amount_due}, paid={total_amount_paid}, balance={total_balance}")
+
+            # Calculate collection percentage for each property
+            property_collection_stats = []
+            for property_obj in properties:
+                # Get units for this property
+                property_units = units.filter(property=property_obj)
+                property_total_units = property_units.count()
+                property_occupied_units = property_units.filter(is_occupied=True).count()
+                
+                # Get payments for this property's units
+                property_payments = payments.filter(unit__property=property_obj)
+                
+                # Calculate payment aggregates for this property
+                property_payment_aggregates = property_payments.aggregate(
+                    property_due=Sum('amount_due'),
+                    property_paid=Sum('amount_paid'),
+                    property_payment_count=Count('id')
+                )
+                
+                property_amount_due = decimal.Decimal(str(property_payment_aggregates['property_due'] or 0))
+                property_amount_paid = decimal.Decimal(str(property_payment_aggregates['property_paid'] or 0))
+                property_payment_count = property_payment_aggregates['property_payment_count'] or 0
+                property_balance = property_amount_due - property_amount_paid
+                
+                # Calculate collection percentage for this property
+                property_collection_percentage = (
+                    (property_amount_paid / property_amount_due * 100) if property_amount_due > 0 else 0.0
+                )
+                
+                property_stats = {
+                    'property_id': property_obj.id,
+                    'property_name': property_obj.name,
+                    'total_units': property_total_units,
+                    'occupied_units': property_occupied_units,
+                    'amount_due': float(property_amount_due),
+                    'amount_paid': float(property_amount_paid),
+                    'balance': float(property_balance),
+                    'collection_percentage': round(property_collection_percentage, 1),
+                    'payment_count': property_payment_count
+                }
+                
+                property_collection_stats.append(property_stats)
+                logger.debug(f"Property {property_obj.name} collection: {property_collection_percentage}%")
+
             stats = {
                 'total_properties': total_properties,
                 'total_units': total_units,
@@ -82,10 +125,12 @@ class DashboardStatsView(generics.GenericAPIView):
                 'total_amount_paid': float(total_amount_paid),
                 'total_balance': float(total_balance),
                 'collection_percentage': round(collection_percentage, 1),
+                'property_collection_stats': property_collection_stats  # New field with per-property stats
             }
 
             serializer = self.get_serializer(stats)
             logger.info(f"Dashboard stats retrieved for user {user.email}: {stats}")
+            
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Exception as e:

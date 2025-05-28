@@ -142,10 +142,11 @@ class Payment(models.Model):
         ]
 
     def __str__(self):
-        # Lazy load Tenant model if needed
         Tenant = Tenant
         tenant_email = self.tenant.user.email if self.tenant and hasattr(self.tenant, 'user') else 'Unknown'
         return f"Payment {self.id} - {tenant_email} for {self.billing_period}"
+    
+    
 
     def save(self, *args, **kwargs):
         if self.payment_status == 'COMPLETED' and not self.payment_date:

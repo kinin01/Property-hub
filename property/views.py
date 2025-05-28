@@ -9,6 +9,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.utils.translation import gettext_lazy as _
 
 from .serializers import PropertySerializer, UnitSerializer
+from utils.pagination import CustomPagination
+from rest_framework import generics, filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Property, Unit
 
@@ -28,6 +31,7 @@ class PropertyRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 class UnitListCreateView(generics.ListCreateAPIView):
     serializer_class = UnitSerializer
     permission_classes = [IsAuthenticated, IsAdminOrPropertyManager]
+    
 
     def get_queryset(self):
         user = self.request.user
