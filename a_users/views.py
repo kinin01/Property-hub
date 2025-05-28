@@ -24,7 +24,6 @@ from tenant.models import Payment
 
 from .serializers import CustomUserSerializer,  RegisterSerializer, LoginSerializer
 from utils.permissions import IsAdminOrPropertyManager
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user(request):
